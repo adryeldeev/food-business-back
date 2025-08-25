@@ -1,8 +1,20 @@
 const userService = require('./user.services.js')
+const bcrypt = require("bcrypt");
 
 const createUser = async (req, res) => {
     const data = req.body
-    user = userService.create(data)
+    let hashedPassword
+
+    if (data.password) {
+        hashedPassword = await hashPassword(data.password)
+    }
+
+    const userToCreate = {
+        ...data,
+        password: hashedPassword
+    };
+
+    user = await userService.create(userToCreate)
 
     return res.status(201).json({
         status: "CREATED",
@@ -81,6 +93,18 @@ const removeUser = async (req, res) => {
     }
 
     return res.status(200).end()
+}
+
+async function hashPassword(password) {
+    try {
+        const saltRounds = 10;
+
+        const hashedPassword = await bcrypt.hash(password, saltRounds);
+
+        return hashedPassword;
+    } catch (err) {
+        console.error(`Creating password hash error: ${err}`);
+    }
 }
 
 module.exports = {
