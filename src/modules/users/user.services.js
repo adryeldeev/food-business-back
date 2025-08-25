@@ -1,9 +1,10 @@
+
 let userList = [
     {
         id: 1,
         nome: "João Silva",
         email: "joao.silva@example.com",
-        senha: "senha123",
+        password: "senha123",
         user_type: "admin",
         phone: "+55 11 91234-5678",
         photo_url: "https://example.com/photos/joao_silva.jpg",
@@ -15,7 +16,7 @@ let userList = [
         id: 2,
         nome: "Maria Oliveira",
         email: "maria.oliveira@example.com",
-        senha: "senha456",
+        password: "senha456",
         user_type: "user",
         phone: "+55 21 99876-5432",
         photo_url: "https://example.com/photos/maria_oliveira.jpg",
@@ -23,10 +24,21 @@ let userList = [
         updated_at: "2025-08-20T09:10:00Z",
         deleted_at: "2025-08-22T17:00:00Z"
     }]
+let nextId = 3;
 
 const create = async (data) => {
-    await userList.push(data)
-    return data
+    const now = new Date().toISOString()
+
+    const user = {
+      id: nextId++,
+      ...data,
+      created_at: now,
+      updated_at: now,
+      deleted_at: null
+    }
+
+    userList.push(user)
+    return user
 }
 
 const getAll = async () => {

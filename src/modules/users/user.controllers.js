@@ -2,24 +2,32 @@ const userService = require('./user.services.js')
 const bcrypt = require("bcrypt");
 
 const createUser = async (req, res) => {
-    const data = req.body
-    let hashedPassword
+    try {
+        const data = req.body;
+        let hashedPassword;
 
-    if (data.password) {
-        hashedPassword = await hashPassword(data.password)
+        if (data.password) {
+            hashedPassword = await hashPassword(data.password);
+        }
+
+        const userToCreate = {
+            ...data,
+            password: hashedPassword,
+        };
+
+        const user = await userService.create(userToCreate);
+
+        return res.status(201).json({
+            status: "CREATED",
+            data: user,
+        });
+    } catch (err) {
+        console.error(err)
+        return res.status(500).json({
+            status: "INTERNAL SERVER ERROR",
+            message: "Creating user error",
+        });
     }
-
-    const userToCreate = {
-        ...data,
-        password: hashedPassword
-    };
-
-    user = await userService.create(userToCreate)
-
-    return res.status(201).json({
-        status: "CREATED",
-        data: user
-    })
 }
 
 const getUsers = async (req, res) => {
