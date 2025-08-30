@@ -1,0 +1,101 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+
+model User {
+  id         Int         @id @default(autoincrement())
+  nome       String
+  email      String      @unique
+  senha      String
+  entregador Entregador? // 1 usuário pode ser entregador
+  enderecos  Endereco[]  // 1 usuário pode ter múltiplos endereços
+  pedidos    Pedido[]    // 1 usuário pode fazer múltiplos pedidos
+}
+
+model Entregador {
+  id          Int      @id @default(autoincrement())
+  telefone    String
+  cpf         String
+  veiculo     String
+  placa       String
+   userId      Int      @unique
+  user        User     @relation(fields: [userId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Endereco {
+  id         Int     @id @default(autoincrement())
+  logradouro String
+  numero     String
+  bairro     String
+  cidade     String
+  estado     String
+  cep        String
+  complemento String?
+  userId     Int
+  user       User    @relation(fields: [userId], references: [id])
+  pedidos    Pedido[] // 1 endereço pode ter múltiplos pedidos
+}
+
+model Pedido {
+  id             Int          @id @default(autoincrement())
+  userId         Int
+  user           User         @relation(fields: [userId], references: [id])
+  enderecoId     Int
+  endereco       Endereco     @relation(fields: [enderecoId], references: [id])
+  itens          ItensPedido[]
+  status         String       @default("PENDENTE")
+  formaPagamento FormaPagamento
+  valorTotal     Float
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+}
+
+model ItensPedido {
+  id         Int      @id @default(autoincrement())
+  pedidoId   Int
+  pedido     Pedido   @relation(fields: [pedidoId], references: [id])
+  foodItemId Int
+  foodItem   FoodItem @relation(fields: [foodItemId], references: [id])
+  quantidade Int
+  preco      Float
+}
+
+model FoodItem {
+  id          Int           @id @default(autoincrement())
+  nome        String
+  descricao   String?
+  preco       Float
+  categoriaId Int
+  categoria   Categoria      @relation(fields: [categoriaId], references: [id])
+  itensPedido ItensPedido[]
+}
+
+model Categoria {
+  id        Int        @id @default(autoincrement())
+  nome      String
+  foodItems FoodItem[]
+}
+
+
+
+enum FormaPagamento {
+  DINHEIRO
+  CARTAO
+  PIX
+  VALE
+}
