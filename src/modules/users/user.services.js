@@ -1,85 +1,139 @@
+const { PrismaClient } = require('../../generated/prisma');
+const bcrypt = require('bcrypt');
+const prisma = new PrismaClient();
 
-let userList = [
-    {
-        id: 1,
-        nome: "João Silva",
-        email: "joao.silva@example.com",
-        password: "senha123",
-        user_type: "admin",
-        phone: "+55 11 91234-5678",
-        photo_url: "https://example.com/photos/joao_silva.jpg",
-        created_at: "2025-08-01T10:15:00Z",
-        updated_at: "2025-08-15T08:45:00Z",
-        deleted_at: null
-    },
-    {
-        id: 2,
-        nome: "Maria Oliveira",
-        email: "maria.oliveira@example.com",
-        password: "senha456",
-        user_type: "user",
-        phone: "+55 21 99876-5432",
-        photo_url: "https://example.com/photos/maria_oliveira.jpg",
-        created_at: "2025-08-05T14:30:00Z",
-        updated_at: "2025-08-20T09:10:00Z",
-        deleted_at: "2025-08-22T17:00:00Z"
-    }]
-let nextId = 3;
+const createUser = async (userData) => {
+  try {
+    const saltRounds = 12;
+    const hashedPassword = await bcrypt.hash(userData.senha, saltRounds);
 
-const create = async (data) => {
-    const now = new Date().toISOString()
-
-    const user = {
-      id: nextId++,
-      ...data,
-      created_at: now,
-      updated_at: now,
-      deleted_at: null
+    const user = await prisma.user.create({
+      data: {
+        nome: userData.nome,
+        email: userData.email,
+        senha: hashedPassword
+      },
+      select: {
+        id: true,
+        nome: true,
+        email: true
+      }
+    });
+    return user;
+  } catch (error) {
+    if (error.code === 'P2002') {
+      throw new Error('Email já está em uso');
     }
+    throw new Error(`Erro ao criar usuário: ${error.message}`);
+  }
+};
 
-    userList.push(user)
-    return user
-}
+const getAllUsers = async () => {
+  try {
+    const users = await prisma.user.findMany({
+      select: {
+        id: true,
+        nome: true,
+        email: true
+      },
+      orderBy: {
+        id: 'desc'
+      }
+    });
+    return users;
+  } catch (error) {
+    throw new Error(`Erro ao buscar usuários: ${error.message}`);
+  }
+};
 
-const getAll = async () => {
-    return userList
-}
+const getUserById = async (userId) => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: parseInt(userId) },
+      select: {
+        id: true,
+        nome: true,
+        email: true
+      }
+    });
+    return user;
+  } catch (error) {
+    throw new Error(`Erro ao buscar usuário: ${error.message}`);
+  }
+};
 
-const getById = async (id) => {
-    return userList.find(user => user.id == id)
-}
+const getUserByEmail = async (email) => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { email },
+      select: {
+        id: true,
+        nome: true,
+        email: true,
+        senha: true 
+      }
+    });
+    return user;
+  } catch (error) {
+    throw new Error(`Erro ao buscar usuário por email: ${error.message}`);
+  }
+};
 
-const update = async (id, data) => {
-    const index = userList.findIndex(user => user.id == id);
-
-    if (index === -1) {
-        return false
-    }
-
-    userList[index] = {
-        ...userList[index],
-        ...data,
-        updated_at: new Date().toISOString()
+const updateUser = async (userId, userData) => {
+  try {
+    let updateData = {
+      nome: userData.nome,
+      email: userData.email
     };
 
-    return userList[index];
-}
-
-const remove = async (id) => {
-    const index = userList.findIndex(user => user.id == id)
-    if (index === -1) {
-        return false
+    if (userData.senha) {
+      const saltRounds = 12;
+      updateData.senha = await bcrypt.hash(userData.senha, saltRounds);
     }
 
-    userList.splice(index, 1)
+    const user = await prisma.user.update({
+      where: { id: parseInt(userId) },
+      data: updateData,
+      select: {
+        id: true,
+        nome: true,
+        email: true
+      }
+    });
+    return user;
+  } catch (error) {
+    if (error.code === 'P2002') {
+      throw new Error('Email já está em uso');
+    }
+    throw new Error(`Erro ao atualizar usuário: ${error.message}`);
+  }
+};
 
-    return true
-}
+const deleteUser = async (userId) => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: parseInt(userId) }
+    });
+
+    if (!user) {
+      throw new Error('Usuário não encontrado');
+    }
+
+    await prisma.user.delete({
+      where: { id: parseInt(userId) }
+    });
+
+    return true;
+  } catch (error) {
+    throw new Error(`Erro ao deletar usuário: ${error.message}`);
+  }
+};
 
 module.exports = {
-    create,
-    getAll,
-    getById,
-    update,
-    remove
-}
+  createUser,
+  getAllUsers,
+  getUserById,
+  getUserByEmail,
+  updateUser,
+  deleteUser
+};

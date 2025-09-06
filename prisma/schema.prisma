@@ -1,0 +1,109 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id         Int         @id @default(autoincrement())
+  nome       String
+  email      String      @unique
+  senha      String
+  entregador Entregador?
+  enderecos  Endereco[]
+  pedidos    Pedido[]
+  
+  @@map("users")
+}
+
+model Entregador {
+  id          Int      @id @default(autoincrement())
+  telefone    String
+  cpf         String
+  veiculo     String
+  placa       String
+  userId      Int      @unique
+  user        User     @relation(fields: [userId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@map("entregadores")
+}
+
+model Endereco {
+  id         Int      @id @default(autoincrement())
+  logradouro String
+  numero     String
+  bairro     String
+  cidade     String
+  estado     String
+  cep        String
+  complemento String?
+  userId     Int
+  user       User    @relation(fields: [userId], references: [id])
+  pedidos    Pedido[]
+  
+  @@map("enderecos")
+}
+
+model Pedido {
+  id             Int          @id @default(autoincrement())
+  userId         Int
+  user           User         @relation(fields: [userId], references: [id])
+  enderecoId     Int
+  endereco       Endereco     @relation(fields: [enderecoId], references: [id])
+  itens          ItensPedido[]
+  status         String       @default("PENDENTE")
+  formaPagamento FormaPagamento
+  valorTotal     Float
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  
+  @@map("pedidos")
+}
+
+model ItensPedido {
+  id         Int      @id @default(autoincrement())
+  pedidoId   Int
+  pedido     Pedido   @relation(fields: [pedidoId], references: [id])
+  foodItemId Int
+  foodItem   FoodItem @relation(fields: [foodItemId], references: [id])
+  quantidade Int
+  preco      Float
+  
+  @@map("itens_pedido")
+}
+
+model FoodItem {
+  id          Int           @id @default(autoincrement())
+  nome        String
+  descricao   String?
+  preco       Float
+  categoriaId Int
+  categoria   Categoria      @relation(fields: [categoriaId], references: [id])
+  itensPedido ItensPedido[]
+  
+  @@map("food_items")
+}
+
+model Categoria {
+  id        Int        @id @default(autoincrement())
+  nome      String
+  foodItems FoodItem[]
+  
+  @@map("categorias")
+}
+
+enum FormaPagamento {
+  DINHEIRO
+  CARTAO
+  PIX
+  VALE
+}
