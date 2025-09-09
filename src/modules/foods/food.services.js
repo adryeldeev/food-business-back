@@ -1,84 +1,158 @@
-const foodData = [
-    {
-    id: 1,
-    name: "Pizza Margherita",
-    description: "Molho de tomate, mussarela fresca, manjericão e azeite",
-    price: 45.90,
-    image_url: "https://example.com/pizza-margherita.jpg",
-    category: "pizza"
-  },
-  {
-    id: 2,
-    name: "Pizza Pepperoni",
-    description: "Molho de tomate, mussarela e pepperoni picante",
-    price: 52.50,
-    image_url: "https://example.com/pizza-pepperoni.jpg",
-    category: "pizza"
-  },
-  {
-    id: 3,
-    name: "Cheeseburger Clássico",
-    description: "Pão brioche, hambúrguer 180g, queijo cheddar e molho especial",
-    price: 24.00,
-    image_url: "https://example.com/cheeseburger.jpg",
-    category: "hamburger"
-  },
-  {
-    id: 4,
-    name: "Burger Bacon",
-    description: "Hambúrguer 200g, bacon crocante, cebola caramelizada e molho barbecue",
-    price: 28.75,
-    image_url: "https://example.com/burger-bacon.jpg",
-    category: "hamburger"
-  },
-  {
-    id: 5,
-    name: "Spaghetti Carbonara",
-    description: "Espaguete com molho cremoso de bacon, ovos e queijo pecorino",
-    price: 32.80,
-    image_url: "https://example.com/spaghetti-carbonara.jpg",
-    category: "pasta"
-  },
-  {
-    id: 6,
-    name: "Coca-Cola",
-    description: "Lata 350ml gelada",
-    price: 6.50,
-    image_url: "https://example.com/coca-cola.jpg",
-    category: "drink"
-  },
-  {
-    id: 7,
-    name: "Suco de Laranja Natural",
-    description: "500ml, feito na hora",
-    price: 10.00,
-    image_url: "https://example.com/suco-laranja.jpg",
-    category: "drink"
-  }
-]
+const { PrismaClient } = require('../../generated/prisma')
 
-const create = () => {
-    return "food created successfuly"
+const prisma = new PrismaClient()
+
+// Criar um novo item de comida
+const create = async (data) => {
+    try {
+        const foodItem = await prisma.foodItem.create({
+            data: {
+                nome: data.nome,
+                descricao: data.descricao,
+                preco: data.preco,
+                categoriaId: data.categoriaId
+            },
+            include: {
+                categoria: true
+            }
+        })
+        return foodItem
+    } catch (error) {
+        throw new Error(`Erro ao criar item de comida: ${error.message}`)
+    }
 }
 
-const getAll = () => {
-    return foodData
+// Buscar todos os itens de comida
+const getAll = async () => {
+    try {
+        const foodItems = await prisma.foodItem.findMany({
+            include: {
+                categoria: true
+            },
+            orderBy: {
+                nome: 'asc'
+            }
+        })
+        return foodItems
+    } catch (error) {
+        throw new Error(`Erro ao buscar itens de comida: ${error.message}`)
+    }
 }
 
-const getById = (id) => {
-    return foodData[0]
+// Buscar item de comida por ID
+const getById = async (id) => {
+    try {
+        const foodItem = await prisma.foodItem.findUnique({
+            where: {
+                id: parseInt(id)
+            },
+            include: {
+                categoria: true
+            }
+        })
+        
+        if (!foodItem) {
+            throw new Error('Item de comida não encontrado')
+        }
+        
+        return foodItem
+    } catch (error) {
+        throw new Error(`Erro ao buscar item de comida: ${error.message}`)
+    }
 }
 
-const getByCategory = (category) => {
-    return foodData[0]
+// Buscar itens de comida por categoria
+const getByCategory = async (categoriaId) => {
+    try {
+        const foodItems = await prisma.foodItem.findMany({
+            where: {
+                categoriaId: parseInt(categoriaId)
+            },
+            include: {
+                categoria: true
+            },
+            orderBy: {
+                nome: 'asc'
+            }
+        })
+        return foodItems
+    } catch (error) {
+        throw new Error(`Erro ao buscar itens por categoria: ${error.message}`)
+    }
 }
 
-const update = (id, data) => {
-    return foodData[0]
+// Atualizar item de comida
+const update = async (id, data) => {
+    try {
+        const foodItem = await prisma.foodItem.update({
+            where: {
+                id: parseInt(id)
+            },
+            data: {
+                nome: data.nome,
+                descricao: data.descricao,
+                preco: data.preco,
+                categoriaId: data.categoriaId
+            },
+            include: {
+                categoria: true
+            }
+        })
+        return foodItem
+    } catch (error) {
+        if (error.code === 'P2025') {
+            throw new Error('Item de comida não encontrado')
+        }
+        throw new Error(`Erro ao atualizar item de comida: ${error.message}`)
+    }
 }
 
-const exclude = (id) => {
-    return "food deleted successfuly"
+// Excluir item de comida
+const exclude = async (id) => {
+    try {
+        const foodItem = await prisma.foodItem.delete({
+            where: {
+                id: parseInt(id)
+            }
+        })
+        return { message: 'Item de comida excluído com sucesso', foodItem }
+    } catch (error) {
+        if (error.code === 'P2025') {
+            throw new Error('Item de comida não encontrado')
+        }
+        throw new Error(`Erro ao excluir item de comida: ${error.message}`)
+    }
+}
+
+// Buscar todas as categorias
+const getCategories = async () => {
+    try {
+        const categorias = await prisma.categoria.findMany({
+            include: {
+                foodItems: true
+            },
+            orderBy: {
+                nome: 'asc'
+            }
+        })
+        return categorias
+    } catch (error) {
+        throw new Error(`Erro ao buscar categorias: ${error.message}`)
+    }
+}
+
+// Criar nova categoria
+const createCategory = async (data) => {
+    try {
+        const categoria = await prisma.categoria.create({
+            data: {
+                nome: data.nome
+            }
+        })
+        return categoria
+    } catch (error) {
+        throw new Error(`Erro ao criar categoria: ${error.message}`)
+    }
 }
 
 module.exports = {
@@ -87,5 +161,7 @@ module.exports = {
     getById,
     getByCategory,
     update,
-    exclude
+    exclude,
+    getCategories,
+    createCategory
 }
