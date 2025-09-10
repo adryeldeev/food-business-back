@@ -155,6 +155,65 @@ const createCategory = async (data) => {
     }
 }
 
+// Buscar categoria por ID
+const getCategoryById = async (id) => {
+    try {
+        const categoria = await prisma.categoria.findUnique({
+            where: {
+                id: parseInt(id)
+            },
+            include: {
+                foodItems: true
+            }
+        })
+        
+        if (!categoria) {
+            throw new Error('Categoria não encontrada')
+        }
+        
+        return categoria
+    } catch (error) {
+        throw new Error(`Erro ao buscar categoria: ${error.message}`)
+    }
+}
+
+// Atualizar categoria
+const updateCategory = async (id, data) => {
+    try {
+        const categoria = await prisma.categoria.update({
+            where: {
+                id: parseInt(id)
+            },
+            data: {
+                nome: data.nome
+            }
+        })
+        return categoria
+    } catch (error) {
+        if (error.code === 'P2025') {
+            throw new Error('Categoria não encontrada')
+        }
+        throw new Error(`Erro ao atualizar categoria: ${error.message}`)
+    }
+}
+
+// Excluir categoria
+const deleteCategory = async (id) => {
+    try {
+        const categoria = await prisma.categoria.delete({
+            where: {
+                id: parseInt(id)
+            }
+        })
+        return { message: 'Categoria excluída com sucesso', categoria }
+    } catch (error) {
+        if (error.code === 'P2025') {
+            throw new Error('Categoria não encontrada')
+        }
+        throw new Error(`Erro ao excluir categoria: ${error.message}`)
+    }
+}
+
 module.exports = {
     create,
     getAll,
@@ -163,5 +222,8 @@ module.exports = {
     update,
     exclude,
     getCategories,
-    createCategory
+    createCategory,
+    getCategoryById,
+    updateCategory,
+    deleteCategory
 }

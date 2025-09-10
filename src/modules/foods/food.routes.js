@@ -13,6 +13,9 @@ router.delete('/foods/:id', foodController.deleteFood)             // DELETE /fo
 
 // Rotas para categorias
 router.get('/categories', foodController.getCategories)            // GET /categories - Listar categorias
+router.get('/categories/:id', foodController.getCategoryById)      // GET /categories/:id - Buscar categoria por ID
 router.post('/categories', foodController.createCategory)          // POST /categories - Criar categoria
+router.put('/categories/:id', foodController.updateCategory)       // PUT /categories/:id - Atualizar categoria
+router.delete('/categories/:id', foodController.deleteCategory)    // DELETE /categories/:id - Excluir categoria
 
 module.exports = router

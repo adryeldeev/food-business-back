@@ -210,6 +210,109 @@ const createCategory = async (req, res) => {
     }
 }
 
+// Buscar categoria por ID
+const getCategoryById = async (req, res) => {
+    try {
+        const { id } = req.params
+        
+        if (!id || isNaN(id)) {
+            return res.status(400).json({
+                message: 'ID inválido'
+            })
+        }
+
+        const category = await foodService.getCategoryById(id)
+        res.status(200).json({
+            message: 'Categoria encontrada',
+            data: category
+        })
+    } catch (error) {
+        console.error('Erro ao buscar categoria:', error.message)
+        
+        if (error.message.includes('não encontrada')) {
+            return res.status(404).json({
+                message: 'Categoria não encontrada'
+            })
+        }
+        
+        res.status(500).json({
+            message: 'Erro interno do servidor',
+            error: error.message
+        })
+    }
+}
+
+// Atualizar categoria
+const updateCategory = async (req, res) => {
+    try {
+        const { id } = req.params
+        const { nome } = req.body
+        
+        if (!id || isNaN(id)) {
+            return res.status(400).json({
+                message: 'ID inválido'
+            })
+        }
+
+        if (!nome) {
+            return res.status(400).json({
+                message: 'Campo nome é obrigatório'
+            })
+        }
+
+        const category = await foodService.updateCategory(id, { nome })
+        res.status(200).json({
+            message: 'Categoria atualizada com sucesso',
+            data: category
+        })
+    } catch (error) {
+        console.error('Erro ao atualizar categoria:', error.message)
+        
+        if (error.message.includes('não encontrada')) {
+            return res.status(404).json({
+                message: 'Categoria não encontrada'
+            })
+        }
+        
+        res.status(500).json({
+            message: 'Erro interno do servidor',
+            error: error.message
+        })
+    }
+}
+
+// Excluir categoria
+const deleteCategory = async (req, res) => {
+    try {
+        const { id } = req.params
+        
+        if (!id || isNaN(id)) {
+            return res.status(400).json({
+                message: 'ID inválido'
+            })
+        }
+
+        const result = await foodService.deleteCategory(id)
+        res.status(200).json({
+            message: result.message,
+            data: result.categoria
+        })
+    } catch (error) {
+        console.error('Erro ao excluir categoria:', error.message)
+        
+        if (error.message.includes('não encontrada')) {
+            return res.status(404).json({
+                message: 'Categoria não encontrada'
+            })
+        }
+        
+        res.status(500).json({
+            message: 'Erro interno do servidor',
+            error: error.message
+        })
+    }
+}
+
 module.exports = {
     createFood,
     getFoods,
@@ -218,5 +321,8 @@ module.exports = {
     updateFood,
     deleteFood,
     getCategories,
-    createCategory
+    createCategory,
+    getCategoryById,
+    updateCategory,
+    deleteCategory
 }
