@@ -1,6 +1,7 @@
 require('dotenv').config({'path':`${process.cwd()}/.env`})
 
 const express = require('express')
+const cors = require('cors')
 const foodRoutes = require('./modules/foods/food.routes.js')
 const userRoutes = require('./modules/users/user.routes.js')
 const enderecoRoutes = require('./modules/enderecos/endereco.routes.js')
@@ -12,6 +13,12 @@ const app = express()
 const port = process.env.APP_PORT || 3000
 app.use(express.json())
 
+app.use(cors({
+    origin: 'http://localhost:5173', // <--- ESSA LINHA É CRUCIAL: PERMITE APENAS SEU FRONTEND LOCAL
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'], // <--- Métodos HTTP que suas rotas usam
+    allowedHeaders: ['Content-Type', 'Authorization'], // <--- Cabeçalhos que seu frontend vai enviar (inclua 'Authorization' para tokens)
+    credentials: true // <--- Permite cookies e cabeçalhos de autorização se necessário (boa prática para autenticação)
+  }));
 // Rotas
 app.use('/api/foods', foodRoutes)
 app.use('/api/users', userRoutes)
