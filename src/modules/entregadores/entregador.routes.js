@@ -1,0 +1,21 @@
+const entregadorController = require('./entregador.controllers.js')
+const { authenticateToken } = require('../../middlewares/auth.js')
+const express = require('express')
+
+const router = express.Router()
+
+// Todas as rotas precisam de autenticação
+router.use(authenticateToken)
+
+// Rotas do entregador logado
+router.post('/', entregadorController.createEntregador)                    // POST /entregadores - Criar perfil de entregador
+router.get('/me', entregadorController.getMeuPerfil)                       // GET /entregadores/me - Perfil do entregador logado
+router.put('/me', entregadorController.updateMeuPerfil)                    // PUT /entregadores/me - Atualizar perfil do entregador
+router.delete('/me', entregadorController.deleteMeuPerfil)                 // DELETE /entregadores/me - Excluir perfil de entregador
+router.get('/verificar', entregadorController.verificarEntregador)         // GET /entregadores/verificar - Verificar se é entregador
+
+// Rotas administrativas
+router.get('/', entregadorController.getEntregadores)                      // GET /entregadores - Listar todos os entregadores
+router.get('/:id', entregadorController.getEntregadorById)                 // GET /entregadores/:id - Buscar entregador por ID
+
+module.exports = router

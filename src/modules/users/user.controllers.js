@@ -1,206 +1,250 @@
-const userService = require('./user.services.js');
-const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
-const { JWT_SECRET } = require('../../middlewares/auth');
+const userService = require('./user.services.js')
 
 const createUser = async (req, res) => {
-  try {
-    const { nome, email, senha } = req.body;
+    try {
+        const { nome, email, senha } = req.body
 
-    if (!nome || !email || !senha) {
-      return res.status(400).json({
-        success: false,
-        message: 'Nome, email e senha são obrigatórios'
-      });
+        if (!nome || !email || !senha) {
+            return res.status(400).json({
+                message: 'Campos obrigatórios: nome, email, senha'
+            })
+        }
+
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+        if (!emailRegex.test(email)) {
+            return res.status(400).json({
+                message: 'Email inválido'
+            })
+        }
+
+        if (senha.length < 6) {
+            return res.status(400).json({
+                message: 'Senha deve ter pelo menos 6 caracteres'
+            })
+        }
+
+        const user = await userService.createUser({ nome, email, senha })
+        
+        res.status(201).json({
+            message: 'Usuário criado com sucesso',
+            data: user
+        })
+    } catch (error) {
+        console.error('Erro ao criar usuário:', error.message)
+        
+        if (error.message.includes('já está em uso')) {
+            return res.status(409).json({
+                message: 'Email já está em uso'
+            })
+        }
+        
+        res.status(500).json({
+            message: 'Erro interno do servidor',
+            error: error.message
+        })
     }
-
-    const user = await userService.createUser({ nome, email, senha });
-    
-    res.status(201).json({
-      success: true,
-      data: user,
-      message: 'Usuário criado com sucesso'
-    });
-  } catch (error) {
-    if (error.message.includes('Email já está em uso')) {
-      return res.status(409).json({
-        success: false,
-        message: 'Este email já está cadastrado'
-      });
-    }
-    res.status(400).json({
-      success: false,
-      message: error.message
-    });
-  }
-};
-
-const login = async (req, res) => {
-  try {
-    const { email, senha } = req.body;
-
-    if (!email || !senha) {
-      return res.status(400).json({
-        success: false,
-        message: 'Email e senha são obrigatórios'
-      });
-    }
-
-    const user = await userService.getUserByEmail(email);
-    
-    if (!user) {
-      return res.status(401).json({
-        success: false,
-        message: 'Credenciais inválidas'
-      });
-    }
-
-    const isPasswordValid = await bcrypt.compare(senha, user.senha);
-    
-    if (!isPasswordValid) {
-      return res.status(401).json({
-        success: false,
-        message: 'Credenciais inválidas'
-      });
-    }
-
-    const token = jwt.sign(
-      { 
-        id: user.id, 
-        email: user.email,
-        nome: user.nome 
-      },
-      JWT_SECRET,
-      { expiresIn: '24h' }
-    );
-
-    const { senha: _, ...userWithoutPassword } = user;
-
-    res.status(200).json({
-      success: true,
-      data: {
-        user: userWithoutPassword,
-        token: token
-      },
-      message: 'Login realizado com sucesso'
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Erro ao realizar login'
-    });
-  }
-};
+}
 
 const getUsers = async (req, res) => {
-  try {
-    const users = await userService.getAllUsers();
-    
-    res.status(200).json({
-      success: true,
-      data: users,
-      count: users.length,
-      message: 'Usuários encontrados com sucesso'
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message
-    });
-  }
-};
+    try {
+        const users = await userService.getAllUsers()
+        
+        res.status(200).json({
+            message: 'Usuários encontrados',
+            data: users,
+            count: users.length
+        })
+    } catch (error) {
+        console.error('Erro ao buscar usuários:', error.message)
+        res.status(500).json({
+            message: 'Erro interno do servidor',
+            error: error.message
+        })
+    }
+}
 
 const getUserById = async (req, res) => {
-  try {
-    const user = await userService.getUserById(req.params.id);
-    
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: 'Usuário não encontrado'
-      });
-    }
+    try {
+        const { id } = req.params
 
-    res.status(200).json({
-      success: true,
-      data: user,
-      message: 'Usuário encontrado com sucesso'
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message
-    });
-  }
-};
+        if (!id || isNaN(id)) {
+            return res.status(400).json({
+                message: 'ID inválido'
+            })
+        }
+
+        const user = await userService.getUserById(id)
+        
+        res.status(200).json({
+            message: 'Usuário encontrado',
+            data: user
+        })
+    } catch (error) {
+        console.error('Erro ao buscar usuário:', error.message)
+        
+        if (error.message.includes('não encontrado')) {
+            return res.status(404).json({
+                message: 'Usuário não encontrado'
+            })
+        }
+        
+        res.status(500).json({
+            message: 'Erro interno do servidor',
+            error: error.message
+        })
+    }
+}
 
 const updateUser = async (req, res) => {
-  try {
-    const { nome, email, senha } = req.body;
+    try {
+        const { id } = req.params
+        const { nome, email, senha } = req.body
 
-    if (!nome || !email) {
-      return res.status(400).json({
-        success: false,
-        message: 'Nome e email são obrigatórios'
-      });
-    }
+        if (!id || isNaN(id)) {
+            return res.status(400).json({
+                message: 'ID inválido'
+            })
+        }
 
-    const user = await userService.updateUser(req.params.id, { nome, email, senha });
-    
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: 'Usuário não encontrado'
-      });
-    }
+        if (email) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+            if (!emailRegex.test(email)) {
+                return res.status(400).json({
+                    message: 'Email inválido'
+                })
+            }
+        }
 
-    res.status(200).json({
-      success: true,
-      data: user,
-      message: 'Usuário atualizado com sucesso'
-    });
-  } catch (error) {
-    if (error.message.includes('Email já está em uso')) {
-      return res.status(409).json({
-        success: false,
-        message: 'Este email já está cadastrado'
-      });
+        if (senha && senha.length < 6) {
+            return res.status(400).json({
+                message: 'Senha deve ter pelo menos 6 caracteres'
+            })
+        }
+
+        const user = await userService.updateUser(id, { nome, email, senha })
+        
+        res.status(200).json({
+            message: 'Usuário atualizado com sucesso',
+            data: user
+        })
+    } catch (error) {
+        console.error('Erro ao atualizar usuário:', error.message)
+        
+        if (error.message.includes('não encontrado')) {
+            return res.status(404).json({
+                message: 'Usuário não encontrado'
+            })
+        }
+        
+        if (error.message.includes('já está em uso')) {
+            return res.status(409).json({
+                message: 'Email já está em uso'
+            })
+        }
+        
+        res.status(500).json({
+            message: 'Erro interno do servidor',
+            error: error.message
+        })
     }
-    res.status(400).json({
-      success: false,
-      message: error.message
-    });
-  }
-};
+}
 
 const deleteUser = async (req, res) => {
-  try {
-    const result = await userService.deleteUser(req.params.id);
-    
-    if (!result) {
-      return res.status(404).json({
-        success: false,
-        message: 'Usuário não encontrado'
-      });
-    }
+    try {
+        const { id } = req.params
 
-    res.status(200).json({
-      success: true,
-      message: 'Usuário deletado com sucesso'
-    });
-  } catch (error) {
-    res.status(400).json({
-      success: false,
-      message: error.message
-    });
-  }
-};
+        if (!id || isNaN(id)) {
+            return res.status(400).json({
+                message: 'ID inválido'
+            })
+        }
+
+        const result = await userService.deleteUser(id)
+        
+        res.status(200).json({
+            message: result.message,
+            data: result.user
+        })
+    } catch (error) {
+        console.error('Erro ao excluir usuário:', error.message)
+        
+        if (error.message.includes('não encontrado')) {
+            return res.status(404).json({
+                message: 'Usuário não encontrado'
+            })
+        }
+        
+        res.status(500).json({
+            message: 'Erro interno do servidor',
+            error: error.message
+        })
+    }
+}
+
+const loginUser = async (req, res) => {
+    try {
+        const { email, senha } = req.body
+
+        if (!email || !senha) {
+            return res.status(400).json({
+                message: 'Email e senha são obrigatórios'
+            })
+        }
+
+        const result = await userService.loginUser(email, senha)
+        
+        res.status(200).json({
+            message: 'Login realizado com sucesso',
+            data: result
+        })
+    } catch (error) {
+        console.error('Erro ao fazer login:', error.message)
+        
+        if (error.message.includes('Email ou senha incorretos')) {
+            return res.status(401).json({
+                message: 'Email ou senha incorretos'
+            })
+        }
+        
+        res.status(500).json({
+            message: 'Erro interno do servidor',
+            error: error.message
+        })
+    }
+}
+
+const getProfile = async (req, res) => {
+    try {
+        const userId = req.user.userId
+        
+        const user = await userService.getProfile(userId)
+        
+        res.status(200).json({
+            message: 'Perfil encontrado',
+            data: user
+        })
+    } catch (error) {
+        console.error('Erro ao buscar perfil:', error.message)
+        
+        if (error.message.includes('não encontrado')) {
+            return res.status(404).json({
+                message: 'Usuário não encontrado'
+            })
+        }
+        
+        res.status(500).json({
+            message: 'Erro interno do servidor',
+            error: error.message
+        })
+    }
+}
 
 module.exports = {
-  createUser,
-  getUsers,
-  getUserById,
-  updateUser,
-  deleteUser,
-  login
-};
+    createUser,
+    getUsers,
+    getUserById,
+    updateUser,
+    deleteUser,
+    loginUser,
+    getProfile
+}
