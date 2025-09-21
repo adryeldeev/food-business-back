@@ -8,14 +8,14 @@ const router = express.Router()
 router.use(authenticateToken)
 
 // Rotas do entregador logado
-router.post('/', entregadorController.createEntregador)                    // POST /entregadores - Criar perfil de entregador
-router.get('/me', entregadorController.getMeuPerfil)                       // GET /entregadores/me - Perfil do entregador logado
-router.put('/me', entregadorController.updateMeuPerfil)                    // PUT /entregadores/me - Atualizar perfil do entregador
-router.delete('/me', entregadorController.deleteMeuPerfil)                 // DELETE /entregadores/me - Excluir perfil de entregador
-router.get('/verificar', entregadorController.verificarEntregador)         // GET /entregadores/verificar - Verificar se é entregador
+router.post('/', authenticateToken, entregadorController.createEntregador)                    // POST /entregadores - Criar perfil de entregador
+router.get('/me', authenticateToken, entregadorController.getMeuPerfil)                       // GET /entregadores/me - Perfil do entregador logado
+router.put('/me', authenticateToken, entregadorController.updateMeuPerfil)                    // PUT /entregadores/me - Atualizar perfil do entregador
+router.delete('/me', authenticateToken, entregadorController.deleteMeuPerfil)                 // DELETE /entregadores/me - Excluir perfil de entregador
+router.get('/verificar', authenticateToken, entregadorController.verificarEntregador)         // GET /entregadores/verificar - Verificar se é entregador
 
 // Rotas administrativas
-router.get('/', entregadorController.getEntregadores)                      // GET /entregadores - Listar todos os entregadores
-router.get('/:id', entregadorController.getEntregadorById)                 // GET /entregadores/:id - Buscar entregador por ID
+router.get('/', authenticateToken, entregadorController.getEntregadores)                      // GET /entregadores - Listar todos os entregadores
+router.get('/:id', authenticateToken, entregadorController.getEntregadorById)                 // GET /entregadores/:id - Buscar entregador por ID
 
 module.exports = router

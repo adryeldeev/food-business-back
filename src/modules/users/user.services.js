@@ -28,8 +28,8 @@ const createUser = async (data) => {
             select: {
                 id: true,
                 nome: true,
-                email: true,
-                createdAt: true
+                email: true
+           
             }
         })
 
@@ -47,14 +47,14 @@ const getAllUsers = async () => {
                 id: true,
                 nome: true,
                 email: true,
-                createdAt: true,
+               
                 enderecos: true,
                 pedidos: {
                     select: {
                         id: true,
                         status: true,
                         valorTotal: true,
-                        createdAt: true
+                        
                     }
                 }
             }
@@ -74,7 +74,7 @@ const getUserById = async (id) => {
                 id: true,
                 nome: true,
                 email: true,
-                createdAt: true,
+             
                 enderecos: true,
                 pedidos: {
                     include: {
@@ -117,7 +117,7 @@ const updateUser = async (id, data) => {
                 id: true,
                 nome: true,
                 email: true,
-                updatedAt: true
+               
             }
         })
 
@@ -197,7 +197,6 @@ const getProfile = async (userId) => {
                 id: true,
                 nome: true,
                 email: true,
-                createdAt: true,
                 enderecos: true,
                 pedidos: {
                     include: {
