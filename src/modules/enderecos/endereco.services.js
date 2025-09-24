@@ -30,6 +30,7 @@ const createEndereco = async (data) => {
         return endereco
     } catch (error) {
         throw new Error(`Erro ao criar endereço: ${error.message}`)
+        console.log('erro ao criar endereço' ,  error)
     }
 }
 
